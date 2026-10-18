@@ -1,8 +1,16 @@
 *.log
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment files
 .env
 .env.backup
 .env.production
+.env.*
+!.env.example
+
+# IDEs & Editors
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -11,14 +19,34 @@
 /.phpunit.cache
 /.vscode
 /.zed
+
+# Auth & Secrets
 /auth.json
+/storage/*.key
+*.key
+*.pem
+
+# Dependencies
 /node_modules
+/vendor
+
+# Frontend / Vite / React Build
 /public/build
 /public/hot
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Laravel Storage & Cache
 /public/storage
-/storage/*.key
 /storage/pail
-/vendor
+
+# Database & Backups
+*.sql
+*.sqlite
+*.sqlite-journal
+
+# Server configs
 Homestead.json
 Homestead.yaml
-Thumbs.db

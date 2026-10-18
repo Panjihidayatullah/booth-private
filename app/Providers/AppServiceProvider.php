@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Admin;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +25,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::define('access-admin', fn (Authenticatable $account) => $account instanceof Admin);
+
+        RateLimiter::for('registration', function (Request $request) {
+            return Limit::perMinute((int) config('auth.limits.registrations_per_minute'))
+                ->by($request->ip());
+        });
     }
 }

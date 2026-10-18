@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Admin;
 use App\Models\User;
 
 return [
@@ -42,6 +43,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
     ],
 
     /*
@@ -65,6 +70,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => Admin::class,
         ],
 
         // 'users' => [
@@ -113,5 +122,22 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    'password_policy' => [
+        'min_length' => 8,
+        'max_length' => 128,
+    ],
+
+    'username_policy' => [
+        'min_length' => 3,
+        'max_length' => 50,
+        'pattern' => '/^[a-z0-9._-]+$/',
+    ],
+
+    'limits' => [
+        'login_attempts' => 5,
+        'login_decay_seconds' => 60,
+        'registrations_per_minute' => 5,
+    ],
 
 ];
