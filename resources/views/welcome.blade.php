@@ -19,6 +19,7 @@
                 'portal' => $portal ?? null,
                 'section' => $section ?? 'home',
                 'heroImageUrl' => asset('images/booth.avif'),
+                'apiBaseUrl' => url('/api'),
                 'user' => (auth('admin')->user() ?? auth('web')->user())?->publicProfile(),
                 'passwordPolicy' => ['minLength' => config('auth.password_policy.min_length'), 'maxLength' => config('auth.password_policy.max_length')],
                 'usernamePolicy' => ['minLength' => config('auth.username_policy.min_length'), 'maxLength' => config('auth.username_policy.max_length')],

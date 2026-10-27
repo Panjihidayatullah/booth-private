@@ -17,6 +17,7 @@ export interface AppConfig {
     portal: 'customer' | 'admin' | null;
     section: string;
     heroImageUrl: string;
+    apiBaseUrl: string;
     user: Account | null;
     passwordPolicy: { minLength: number; maxLength: number };
     usernamePolicy: { minLength: number; maxLength: number };

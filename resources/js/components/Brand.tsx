@@ -9,7 +9,7 @@ export default function Brand({ href, light = false }: BrandProps) {
     return (
         <a className={`brand${light ? ' brand-light' : ''}`} href={href} aria-label="RuangTemu, halaman utama">
             <span className="brand-symbol"><Asterisk aria-hidden="true" /></span>
-            <span>RuangTemu</span>
+            <span className="brand-label">RuangTemu</span>
         </a>
     );
 }

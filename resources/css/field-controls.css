@@ -1,0 +1,31 @@
+.field-control { position: relative; width: 100%; min-width: 0; color: var(--forest-dark); }
+.field-control > input.field-control-native { position: absolute !important; top: 0; left: 0; width: 1px !important; height: 1px !important; min-height: 0 !important; padding: 0 !important; overflow: hidden; clip-path: inset(50%); opacity: 0; pointer-events: none; border: 0 !important; }
+.field-trigger { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-width: 0; min-height: 44px; padding: 11px 12px; border: 1px solid var(--border); border-radius: 11px; color: var(--forest-dark); background: white; font: inherit; font-size: 12px; font-weight: 400; line-height: 1.5; text-align: left; transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.field-trigger:hover:not(:disabled) { border-color: #a8b7a0; background: #fcfdf9; }
+.field-trigger:focus-visible, .field-trigger[aria-expanded='true'] { border-color: #7b9b5b; outline: 2px solid #a3e61550; outline-offset: 1px; }
+.field-trigger[aria-invalid='true'] { border-color: var(--error); }
+.field-trigger:disabled { cursor: not-allowed; opacity: .6; background: var(--surface-card); }
+.field-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field-placeholder { color: var(--text-muted); }
+.field-trigger-icon { display: inline-flex; flex: 0 0 auto; color: var(--forest-muted); }
+.field-trigger-icon svg { width: 16px; height: 16px; transition: transform .16s ease; }
+.field-trigger[aria-haspopup='listbox'][aria-expanded='true'] .field-trigger-icon svg { transform: rotate(180deg); }
+.field-validation { display: block; margin-top: 7px; color: var(--error); font-size: 11px; line-height: 1.6; }
+.field-popover { position: fixed; inset: auto; margin: 0; padding: 8px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--border); border-radius: 16px; color: var(--forest-dark); background: white; box-shadow: 0 16px 50px #10271e24, 0 2px 8px #10271e0a; font-family: var(--font-sans); font-size: 12px; line-height: 1.5; scrollbar-width: thin; scrollbar-color: var(--brand-lime) transparent; opacity: 0; transform: translateY(-5px); transition: opacity .16s ease, transform .16s ease, display .16s allow-discrete, overlay .16s allow-discrete; }
+.field-popover:popover-open { opacity: 1; transform: translateY(0); }
+.field-popover:not(:popover-open) { pointer-events: none; }
+.field-popover::backdrop { background: transparent; }
+.field-popover:focus { outline: none; }
+.field-popover button { font: inherit; }
+.field-select-options { display: grid; gap: 3px; }
+.field-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 40px; padding: 10px 12px; border: 0; border-radius: 10px; color: var(--forest-dark); background: transparent; font-size: 12px; line-height: 1.6; text-align: left; }
+.field-option > span { min-width: 0; overflow-wrap: anywhere; }
+.field-option svg { width: 16px; height: 16px; }
+.field-option:hover:not(:disabled), .field-option:focus-visible { outline: none; color: var(--forest-dark); background: #edf4e4; }
+.field-option[aria-selected='true'], .field-option[aria-selected='true']:focus-visible { color: var(--forest-dark); background: var(--brand-lime); font-weight: 500; }
+.field-option:disabled { cursor: not-allowed; opacity: .45; }
+.field-no-options { margin: 0; padding: 15px 12px; color: var(--text-muted); font-size: 12px; }
+@starting-style { .field-popover:popover-open { opacity: 0; transform: translateY(-5px); } }
+@media (max-width: 767px) { .field-trigger { min-height: 46px; font-size: 14px; } .field-option { min-height: 44px; font-size: 13px; } }
+@media (prefers-reduced-motion: reduce) { .field-popover, .field-trigger, .field-trigger-icon svg { transition: none; } }
+@media print { .field-popover { display: none !important; } }

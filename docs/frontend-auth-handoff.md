@@ -2,7 +2,7 @@
 
 ## Lokasi dan stack
 
-Pengerjaan berada langsung di `C:/xampp/htdocs/booth-private`. URL halaman, foto, dan endpoint dibuat oleh Laravel; frontend tidak mengunci host atau lokasi worktree.
+Pengerjaan berada langsung di `C:/laragon/www/booth-private`. URL halaman, foto, dan endpoint dibuat oleh Laravel; frontend tidak mengunci host atau lokasi worktree. `apiBaseUrl` juga disediakan Laravel untuk endpoint modul operasional.
 
 Laravel 12 melayani React TypeScript melalui Vite dan Tailwind CSS yang sudah ada. Warna serta font mengikuti referensi HTML: lime `#A3E615`, forest `#1C362B`, `#1B4333`, dan Plus Jakarta Sans. Foto pengguna di `public/images/booth.avif` mengisi hero sampai tepi layar pada desktop dan mobile. Bagian lain tetap menggunakan layout kartu sesuai desain yang disetujui.
 
@@ -43,24 +43,62 @@ Endpoint berada di middleware web dengan prefix `api/auth`, sehingga sesi dan CS
 
 ## Batas tahap ini
 
-Landing page, sign in/sign up, sesi, halaman identitas pelanggan, navigasi panel pelanggan/admin, dan logout telah diimplementasikan. Backend penyimpanan ruang/fasilitas, jadwal, pemesanan/pembatalan, check-in/out, pemeliharaan, serta laporan masih menjadi tahap berikutnya. Halaman modulnya tersedia sebagai kerangka yang menyatakan status tersebut dengan jelas.
+Landing page, sign in/sign up, sesi, halaman identitas pelanggan, navigasi panel pelanggan/admin, dan logout telah diimplementasikan. Lima modul operasional sekarang tersambung ke database dan API:
 
-Tidak ada ruangan, fasilitas, tiket, statistik, ataupun pesan sukses penyimpanan simulasi yang ditanam di frontend. Detail fasilitas nantinya berasal dari isian pengelola. Alur yang dipertahankan untuk tim berikutnya: pengelola menambahkan fasilitas dan ruang; pelanggan memilih ruang, menentukan jadwal, mengonfirmasi, lalu melihat reservasinya.
+1. Katalog serta pencarian ruangan berdasarkan jadwal, kapasitas, jenis, fasilitas, nama, dan lokasi; detail memuat aturan serta denah skematik.
+2. Pemesanan pelanggan, pemeriksaan ulang ketersediaan, penerbitan tiket, daftar mendatang/riwayat, dan pembatalan sebelum jam mulai.
+3. Daftar reservasi admin beserta filter, check-in, check-out, dan penandaan Tidak Hadir dengan batas waktu di server.
+4. Pengelolaan ruangan/fasilitas, aktivasi/nonaktif, pengarsipan aman, serta blokir pemeliharaan yang memeriksa benturan.
+5. Ringkasan serta laporan pemakaian aktual, jam terjadwal, kapasitas operasional, pembatalan, Tidak Hadir, dan filter periode/ruangan.
+
+Tidak ada ruangan, fasilitas, tiket, atau statistik simulasi yang ditanam di frontend maupun otomatis dimasukkan ke database aplikasi. Pengelola mengisi inventaris nyata. Migrasi modul operasional hanya menambah tabel, tanpa menghapus akun atau data lama. Status kosong pada antarmuka berarti belum ada data yang sesuai, bukan modul yang belum diaktifkan.
+
+Pembayaran, notifikasi email/dalam aplikasi, OTP, IoT, dan integrasi eksternal tidak termasuk tahap lima modul yang diminta ini. Definisi perhitungan, aturan waktu, endpoint, alur penggunaan, dan cara verifikasi dijelaskan dalam [aturan modul operasional](business-rules.md).
+
+## Menyiapkan dan menggunakan modul
+
+Periksa koneksi database di lingkungan lokal dan status migrasi, lalu jalankan migrasi tambahan bila masih ada yang pending:
+
+```powershell
+php artisan migrate:status
+php artisan migrate
+```
+
+Jangan menggunakan `migrate:fresh`, `migrate:refresh`, atau menjalankan seeder akun untuk memperbarui proyek yang sudah berisi akun. Jika belum memiliki akun admin, gunakan perintah interaktif berikut dengan username baru; kata sandi diminta melalui prompt tersembunyi:
+
+```powershell
+php artisan account:create admin operator --name="Nama Pengelola"
+```
+
+Masuk melalui `/admin/login`, tambahkan fasilitas pada `/admin/fasilitas`, lalu tambahkan ruangan aktif beserta kapasitas, lokasi/lantai, aturan, fasilitas, dan denah pada `/admin/ruangan`. Data ruangan aktif akan tampil di katalog publik dan pencarian pelanggan. Pengelola menangani jadwal pemeliharaan melalui `/admin/pemeliharaan`, reservasi serta kehadiran melalui `/admin/reservasi`, dan laporan melalui `/admin/laporan`.
+
+Pelanggan mendaftar atau masuk melalui `/sign-up` dan `/sign-in`, memilih jadwal di `/pelanggan/ruangan`, membuka detail, melengkapi keperluan, memeriksa ringkasan, lalu mengonfirmasi. Tiket berasal dari reservasi yang benar-benar tersimpan. `/pelanggan/reservasi` menyediakan tiket, cetak, riwayat, dan pembatalan yang masih diizinkan server.
 
 ## Berkas utama
 
 - `resources/js/pages/`: landing, formulir akun, serta shell pelanggan/admin.
 - `resources/js/components/`: merek dan drawer bersama.
+- `resources/js/features/reservations/`: katalog, pencarian/pemesanan pelanggan, reservasi, modul admin, denah, tiket, dan ringkasan.
 - `resources/js/lib/http.ts`: request serta pesan kegagalan yang aman.
 - `resources/css/app.css`: tema dan responsivitas bersama.
 - `app/Models/User.php` dan `app/Models/Admin.php`: akun dengan tabel/provider masing-masing.
 - `app/Http/Controllers/AuthController.php`: autentikasi dua guard dan sesi.
+- `app/Http/Controllers/`: endpoint katalog, ruangan, fasilitas, reservasi, pemeliharaan, dan laporan.
+- `app/Services/ReservationService.php`: validasi jadwal serta perubahan reservasi dalam transaksi dengan kunci ruangan.
+- `app/Services/OccupancyReportService.php`: penghitungan okupansi berdasarkan periode aktif ruangan, pemeliharaan, dan kehadiran.
+- `config/reservations.php`: jam operasional, durasi minimal, zona waktu, dan toleransi keterlambatan.
 - `app/Http/Requests/`: normalisasi serta validasi server.
 - `app/Console/Commands/CreateAccount.php`: pembuatan akun tanpa menaruh kata sandi di argumen command.
-- `routes/web.php`: halaman serta endpoint sesi.
+- `routes/web.php`: halaman, autentikasi, katalog publik, API pelanggan, dan API admin.
 
 ## Pemeriksaan
 
-Gunakan typecheck TypeScript, `npm run build`, `php artisan view:cache`, dan `php artisan test`. Pengujian autentikasi mengatur SQLite dalam memori sebelum migrasi; akun sintetis pengujian tidak dimasukkan ke database proyek. Pemeriksaan mencakup pemisahan tabel/guard walau ID dan username sama, pembatasan login, CSRF, penolakan signup admin, kerahasiaan respons, serta pencegahan penimpaan akun.
+```powershell
+npx tsc --noEmit
+npm run build
+php artisan test
+```
+
+Pengujian autentikasi dan alur reservasi mengatur SQLite dalam memori sebelum migrasi; akun dan ruangan sintetis pengujian tidak dimasukkan ke database proyek. Pemeriksaan autentikasi mencakup pemisahan tabel/guard walau ID dan username sama, pembatasan login, CSRF, penolakan signup admin, kerahasiaan respons, serta pencegahan penimpaan akun. Pengujian modul operasional mencakup pencarian, transaksi reservasi, jadwal beruntun, benturan, kapasitas, kepemilikan tiket, pembatalan, kehadiran, pemeliharaan, pengarsipan, dan hasil laporan.
 
 Keberhasilan pemeriksaan kode tidak menggantikan pemeriksaan visual desktop/mobile.

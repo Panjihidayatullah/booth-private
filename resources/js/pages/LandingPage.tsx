@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUpRight, CalendarDays, LayoutDashboard, LogIn, Mic, ShieldCheck, TicketCheck, Users } from 'lucide-react';
 import Brand from '../components/Brand';
 import NavigationDrawer from '../components/NavigationDrawer';
+import PublicRoomCatalog from '../features/reservations/PublicRoomCatalog';
 import type { AppConfig } from '../types/app';
 
 interface LandingPageProps {
@@ -16,15 +18,23 @@ const MAIN_NAVIGATION = [
 
 export default function LandingPage({ config }: LandingPageProps) {
     const accountUrl = config.user ? config.urls.dashboard : config.urls.login;
+    const [isHeaderScrolled, setIsHeaderScrolled] = useState(() => typeof window !== 'undefined' && window.scrollY > 24);
+
+    useEffect(() => {
+        const updateHeader = () => setIsHeaderScrolled(window.scrollY > 24);
+
+        updateHeader();
+        window.addEventListener('scroll', updateHeader, { passive: true });
+
+        return () => window.removeEventListener('scroll', updateHeader);
+    }, []);
 
     return (
         <div className="landing-page">
             <a className="skip-link" href="#main-content">Lewati ke konten utama</a>
-            <header id="home" className="hero-frame">
-                <img className="hero-background" src={config.heroImageUrl} alt="Area booth dengan sofa melengkung, meja bundar, dan kursi di dekat jendela" width="1170" height="780" fetchPriority="high" />
-                <div className="hero-overlay" aria-hidden="true" />
+            <div className={`landing-header${isHeaderScrolled ? ' is-scrolled' : ''}`}>
                 <div className="hero-navigation page-container">
-                    <Brand href={config.urls.home} light />
+                    <Brand href={config.urls.home} light={!isHeaderScrolled} />
                     <nav className="desktop-navigation" aria-label="Navigasi utama">
                         {MAIN_NAVIGATION.map((link) => <a key={link.href} href={link.href}>{link.label}</a>)}
                     </nav>
@@ -35,6 +45,10 @@ export default function LandingPage({ config }: LandingPageProps) {
                         <NavigationDrawer links={MAIN_NAVIGATION} footer={<a className="button button-lime" href={accountUrl}>{config.user ? 'Buka Dashboard' : 'Sign in'}<ArrowUpRight aria-hidden="true" /></a>} />
                     </div>
                 </div>
+            </div>
+            <header id="home" className="hero-frame">
+                <img className="hero-background" src={config.heroImageUrl} alt="Area booth dengan sofa melengkung, meja bundar, dan kursi di dekat jendela" width="1170" height="780" fetchPriority="high" />
+                <div className="hero-overlay" aria-hidden="true" />
                 <div className="hero-content page-container">
                     <span className="tag-pill tag-pill-inverse">Ruang kerja & booth privat</span>
                     <h1>Ruang yang tepat.<br /><span>Untuk setiap ide.</span></h1>
@@ -63,10 +77,7 @@ export default function LandingPage({ config }: LandingPageProps) {
                 <section id="ruangan" className="rooms-section section-frame" aria-labelledby="rooms-title">
                     <div className="page-container">
                         <div className="split-section-heading"><div><span className="tag-pill tag-pill-inverse">Pilihan ruang</span><h2 id="rooms-title">Temukan ruang.<br /><span>Sesuaikan dengan rencanamu.</span></h2></div><p>Informasi ruangan, kapasitas, serta fasilitas mengikuti data yang disiapkan oleh pengelola.</p></div>
-                        <div className="room-empty-state">
-                            <div className="room-empty-symbol" aria-hidden="true"><span /><span /><span /><Mic /></div>
-                            <div><span className="eyebrow">RuangTemu</span><h3>Belum ada ruangan yang ditampilkan</h3><p>Daftar ruang beserta fasilitas dan jadwalnya akan muncul setelah ditambahkan oleh pengelola.</p><a className="button button-lime" href={accountUrl}>{config.user ? 'Buka Dashboard' : 'Masuk ke Akun'}<ArrowUpRight aria-hidden="true" /></a></div>
-                        </div>
+                        <PublicRoomCatalog config={config} />
                     </div>
                 </section>
 

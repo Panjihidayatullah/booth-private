@@ -35,5 +35,5 @@ export function describeRequestError(error: unknown): { message: string; errors:
         return { message: 'Koneksi belum berhasil. Periksa koneksi, lalu coba kembali.', errors: {} };
     }
 
-    return { message: 'Layanan akun belum dapat diakses. Silakan coba lagi.', errors: {} };
+    return { message: 'Layanan belum dapat diakses. Silakan coba lagi.', errors: {} };
 }

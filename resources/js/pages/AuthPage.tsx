@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { ArrowLeft, ArrowUpRight, Eye, EyeOff, LoaderCircle, LockKeyhole } from 'lucide-react';
 import Brand from '../components/Brand';
+import useAuthMode, { type AuthMode } from '../hooks/useAuthMode';
 import { describeRequestError, http, type ValidationErrors } from '../lib/http';
 import type { AppConfig } from '../types/app';
 
@@ -9,12 +10,53 @@ interface AuthPageProps {
 }
 
 export default function AuthPage({ config }: AuthPageProps) {
-    const isSignUp = config.page === 'signup';
     const isAdminLogin = config.page === 'admin-signin';
+    const { selectedMode, displayedMode, isFading, selectMode } = useAuthMode({
+        initialMode: config.page === 'signup' ? 'signup' : 'signin',
+        loginUrl: config.urls.login,
+        registerUrl: config.urls.register,
+        enabled: !isAdminLogin,
+    });
+    const isSignUp = !isAdminLogin && displayedMode === 'signup';
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<ValidationErrors>({});
     const [message, setMessage] = useState('');
+    const scrollRegionRef = useRef<HTMLDivElement>(null);
+    const activeRequestRef = useRef<AbortController | null>(null);
+    const focusSelectedTabRef = useRef(false);
+
+    useLayoutEffect(() => {
+        activeRequestRef.current?.abort();
+        activeRequestRef.current = null;
+        setIsSubmitting(false);
+        setIsPasswordVisible(false);
+        setErrors({});
+        setMessage('');
+        if (scrollRegionRef.current) scrollRegionRef.current.scrollTop = 0;
+        if (focusSelectedTabRef.current) {
+            document.querySelector<HTMLAnchorElement>('.auth-tabs a[aria-current="page"]')?.focus({ preventScroll: true });
+            focusSelectedTabRef.current = false;
+        }
+    }, [displayedMode]);
+
+    useLayoutEffect(() => {
+        if (!activeRequestRef.current) return;
+        activeRequestRef.current.abort();
+        activeRequestRef.current = null;
+        setIsSubmitting(false);
+    }, [selectedMode]);
+
+    useEffect(() => () => activeRequestRef.current?.abort(), []);
+
+    function handleModeLink(event: MouseEvent<HTMLAnchorElement>, mode: AuthMode) {
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        if (!isSubmitting) {
+            focusSelectedTabRef.current = Boolean(event.currentTarget.closest('.auth-switch'));
+            selectMode(mode);
+        }
+    }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -32,6 +74,8 @@ export default function AuthPage({ config }: AuthPageProps) {
         }
 
         setIsSubmitting(true);
+        const request = new AbortController();
+        activeRequestRef.current = request;
 
         try {
             const credentials = { password };
@@ -39,14 +83,19 @@ export default function AuthPage({ config }: AuthPageProps) {
                 ? { ...credentials, name: String(form.get('name') ?? ''), username: String(form.get('username') ?? ''), email: String(form.get('email') ?? ''), password_confirmation: confirmation }
                 : { ...credentials, login: String(form.get('login') ?? ''), remember: form.get('remember') === 'on' };
             const endpoint = isSignUp ? config.urls.auth.register : isAdminLogin ? config.urls.auth.adminLogin : config.urls.auth.login;
-            const { data } = await http.post<{ redirect: string }>(endpoint, payload);
+            const { data } = await http.post<{ redirect: string }>(endpoint, payload, { signal: request.signal });
+            if (request.signal.aborted) return;
             window.location.assign(data.redirect);
         } catch (error) {
+            if (request.signal.aborted) return;
             const result = describeRequestError(error);
             setErrors(result.errors);
             setMessage(result.message);
         } finally {
-            setIsSubmitting(false);
+            if (activeRequestRef.current === request) {
+                activeRequestRef.current = null;
+                setIsSubmitting(false);
+            }
         }
     }
 
@@ -55,7 +104,7 @@ export default function AuthPage({ config }: AuthPageProps) {
     }
 
     return (
-        <main className="auth-layout">
+        <main className={`auth-layout ${isAdminLogin ? 'auth-layout-signin' : 'auth-layout-customer'}`}>
             <section className="auth-visual" aria-label="Ruang kerja RuangTemu">
                 <img src={config.heroImageUrl} alt="Area booth dengan meja dan sofa di dekat jendela" width="1170" height="780" />
                 <div className="auth-visual-content">
@@ -71,16 +120,25 @@ export default function AuthPage({ config }: AuthPageProps) {
             <section className="auth-form-panel" aria-labelledby="auth-title">
                 <a className="back-link" href={config.urls.home}><ArrowLeft aria-hidden="true" />Kembali ke Home</a>
                 <div className="auth-form-container">
-                    <span className="auth-icon"><LockKeyhole aria-hidden="true" /></span>
-                    <span className="eyebrow">{isSignUp ? 'Mulai bersama RuangTemu' : isAdminLogin ? 'Administrator RuangTemu' : 'Selamat datang kembali'}</span>
-                    <h1 id="auth-title">{isSignUp ? 'Buat akunmu.' : isAdminLogin ? 'Masuk ke panel admin.' : 'Masuk ke akunmu.'}</h1>
-                    <p className="auth-intro">{isSignUp ? 'Daftarkan akun pelanggan untuk mulai merencanakan penggunaan ruang.' : isAdminLogin ? 'Gunakan akun admin untuk mengakses panel pengelolaan.' : 'Sign in untuk melanjutkan aktivitas dan mengakses ruangmu.'}</p>
-                    {!isAdminLogin ? <div className="auth-tabs" aria-label="Pilihan halaman akun">
-                        <a href={config.urls.login} aria-current={!isSignUp ? 'page' : undefined}>Sign in</a>
-                        <a href={config.urls.register} aria-current={isSignUp ? 'page' : undefined}>Sign up</a>
-                    </div> : null}
+                    <div className={`auth-mode-heading${isFading ? ' is-fading' : ''}`}>
+                        <div className="auth-heading">
+                            <span className="auth-icon"><LockKeyhole aria-hidden="true" /></span>
+                            <div>
+                                <span className="eyebrow">{isSignUp ? 'Mulai bersama RuangTemu' : isAdminLogin ? 'Administrator RuangTemu' : 'Selamat datang kembali'}</span>
+                                <h1 id="auth-title">{isSignUp ? 'Buat akunmu.' : isAdminLogin ? 'Masuk ke panel admin.' : 'Masuk ke akunmu.'}</h1>
+                            </div>
+                        </div>
+                        <p className="auth-intro">{isSignUp ? 'Daftarkan akun pelanggan untuk mulai merencanakan penggunaan ruang.' : isAdminLogin ? 'Gunakan akun admin untuk mengakses panel pengelolaan.' : 'Sign in untuk melanjutkan aktivitas dan mengakses ruangmu.'}</p>
+                    </div>
+                    {!isAdminLogin ? <nav className="auth-tabs" aria-label="Pilihan halaman akun" data-active-mode={selectedMode}>
+                        <span className="auth-tabs-indicator" aria-hidden="true" />
+                        <a href={config.urls.login} aria-current={selectedMode === 'signin' ? 'page' : undefined} aria-disabled={isSubmitting || undefined} onClick={(event) => handleModeLink(event, 'signin')}>Sign in</a>
+                        <a href={config.urls.register} aria-current={selectedMode === 'signup' ? 'page' : undefined} aria-disabled={isSubmitting || undefined} onClick={(event) => handleModeLink(event, 'signup')}>Sign up</a>
+                    </nav> : null}
+                    <div ref={scrollRegionRef} id={!isAdminLogin ? 'auth-customer-scroll' : undefined} className={!isAdminLogin ? 'auth-mode-scroll' : undefined} tabIndex={!isAdminLogin ? 0 : undefined} role={!isAdminLogin ? 'region' : undefined} aria-label={!isAdminLogin ? 'Formulir akun' : undefined}>
+                    <div className={`auth-mode-content auth-mode-${displayedMode}${isFading ? ' is-fading' : ''}`} inert={isFading}>
                     {message ? <div className="form-alert" role="alert">{message}</div> : null}
-                    <form className="auth-form" onSubmit={handleSubmit}>
+                    <form key={displayedMode} className="auth-form" onSubmit={handleSubmit}>
                         {isSignUp ? (
                             <>
                             <div className="form-field">
@@ -125,7 +183,9 @@ export default function AuthPage({ config }: AuthPageProps) {
                             {isSubmitting ? <><LoaderCircle className="loading-icon" aria-hidden="true" />Memproses...</> : <>{isSignUp ? 'Buat Akun' : 'Sign in'}<ArrowUpRight aria-hidden="true" /></>}
                         </button>
                     </form>
-                    {!isAdminLogin ? <p className="auth-switch">{isSignUp ? 'Sudah punya akun?' : 'Belum punya akun?'} <a href={isSignUp ? config.urls.login : config.urls.register}>{isSignUp ? 'Sign in' : 'Sign up'}</a></p> : null}
+                    {!isAdminLogin ? <p className="auth-switch">{isSignUp ? 'Sudah punya akun?' : 'Belum punya akun?'} <a href={isSignUp ? config.urls.login : config.urls.register} aria-disabled={isSubmitting || undefined} onClick={(event) => handleModeLink(event, isSignUp ? 'signin' : 'signup')}>{isSignUp ? 'Sign in' : 'Sign up'}</a></p> : null}
+                    </div>
+                    </div>
                 </div>
                 <p className="auth-panel-footer">Ruang untuk bertemu. Waktu untuk fokus.</p>
             </section>

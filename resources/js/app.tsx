@@ -1,6 +1,7 @@
 import './bootstrap';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import OverlayScrollbar from './components/OverlayScrollbar';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import WorkspacePage from './pages/WorkspacePage';
@@ -19,6 +20,7 @@ if (appElement) {
                 : <LandingPage config={config} />;
         createRoot(appElement).render(
             <StrictMode>
+                <OverlayScrollbar scrollTargetId={config.page === 'signin' || config.page === 'signup' ? 'auth-customer-scroll' : undefined} />
                 {page}
             </StrictMode>,
         );

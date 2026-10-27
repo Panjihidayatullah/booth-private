@@ -1,6 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\FacilityController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\RoomController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -32,3 +38,32 @@ Route::prefix('api/auth')->name('auth.')->group(function () {
     Route::post('/sign-up', [AuthController::class, 'register'])->middleware('throttle:registration')->name('register');
     Route::post('/sign-out', [AuthController::class, 'logout'])->middleware('auth:web,admin')->name('logout');
 });
+
+Route::prefix('api/catalog')->group(function () {
+    Route::get('/rooms', [CatalogController::class, 'rooms'])->name('api.catalog.rooms');
+    Route::get('/rooms/{room}', [CatalogController::class, 'show'])->name('api.catalog.rooms.show');
+    Route::get('/facilities', [CatalogController::class, 'facilities'])->name('api.catalog.facilities');
+});
+
+Route::middleware('auth:web')->prefix('api/customer')->group(function () {
+    Route::get('/reservations', [ReservationController::class, 'index'])->name('api.customer.reservations');
+    Route::post('/reservations', [ReservationController::class, 'store']);
+    Route::get('/reservations/{reservation}/ticket', [ReservationController::class, 'ticket'])->name('api.customer.reservations.ticket');
+    Route::get('/reservations/{reservation}', [ReservationController::class, 'show']);
+    Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
+});
+
+Route::middleware(['auth:web,admin', 'can:access-admin'])->prefix('api/admin')->group(function () {
+    Route::apiResource('rooms', RoomController::class);
+    Route::apiResource('facilities', FacilityController::class);
+    Route::get('/maintenance', [MaintenanceController::class, 'index']);
+    Route::post('/maintenance', [MaintenanceController::class, 'store']);
+    Route::delete('/maintenance/{maintenance}', [MaintenanceController::class, 'destroy']);
+    Route::get('/reservations', [ReservationController::class, 'adminIndex']);
+    Route::post('/reservations/{reservation}/check-in', [ReservationController::class, 'checkIn']);
+    Route::post('/reservations/{reservation}/check-out', [ReservationController::class, 'checkOut']);
+    Route::post('/reservations/{reservation}/no-show', [ReservationController::class, 'noShow']);
+    Route::get('/reports', [ReportController::class, 'index']);
+});
+
+Route::middleware('auth:web,admin')->get('/api/workspace/summary', [ReportController::class, 'summary']);

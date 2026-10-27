@@ -1,7 +1,15 @@
 import { useState } from 'react';
-import { ArrowUpRight, Building2, CalendarDays, ClipboardList, Home, LayoutDashboard, LogOut, Settings2, ShieldCheck, Ticket, UserRound, Wrench } from 'lucide-react';
+import { Building2, CalendarDays, ChevronRight, ClipboardList, Home, LayoutDashboard, LogOut, Settings2, ShieldCheck, Ticket, UserRound, Wrench } from 'lucide-react';
 import Brand from '../components/Brand';
 import NavigationDrawer from '../components/NavigationDrawer';
+import WorkspaceOverview from '../features/reservations/WorkspaceOverview';
+import CustomerRooms from '../features/reservations/CustomerRooms';
+import CustomerBookings from '../features/reservations/CustomerBookings';
+import AdminRooms from '../features/reservations/AdminRooms';
+import AdminFacilities from '../features/reservations/AdminFacilities';
+import AdminReservations from '../features/reservations/AdminReservations';
+import AdminMaintenance from '../features/reservations/AdminMaintenance';
+import AdminReports from '../features/reservations/AdminReports';
 import { describeRequestError, http } from '../lib/http';
 import type { AppConfig } from '../types/app';
 
@@ -9,8 +17,21 @@ interface WorkspacePageProps {
     config: AppConfig;
 }
 
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'ruangtemu.workspace.sidebar-collapsed';
+
+function getInitialSidebarState() {
+    if (typeof window === 'undefined') return false;
+
+    try {
+        return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === 'true';
+    } catch {
+        return false;
+    }
+}
+
 export default function WorkspacePage({ config }: WorkspacePageProps) {
     const isAdmin = config.portal === 'admin';
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(getInitialSidebarState);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [error, setError] = useState('');
     const menu = isAdmin ? [
@@ -27,7 +48,6 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
         { key: 'account', label: 'Akun Saya', href: config.urls.customer.account, icon: UserRound },
     ];
     const current = menu.find((item) => item.key === config.section) ?? menu[0];
-    const CurrentIcon = current.icon;
 
     async function logout() {
         if (isLoggingOut) return;
@@ -42,55 +62,70 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
         }
     }
 
-    const logoutButton = <button className="logout-button" type="button" onClick={logout} disabled={isLoggingOut}><LogOut aria-hidden="true" />{isLoggingOut ? 'Keluar...' : 'Sign out'}</button>;
+    function toggleSidebar() {
+        setIsSidebarCollapsed((isCollapsed) => {
+            const nextState = !isCollapsed;
+
+            try {
+                window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(nextState));
+            } catch {
+                // The sidebar still works when browser storage is unavailable.
+            }
+
+            return nextState;
+        });
+    }
+
+    const logoutLabel = isLoggingOut ? 'Keluar...' : 'Sign out';
+    const logoutButton = <button className="logout-button" type="button" onClick={logout} disabled={isLoggingOut} aria-label={logoutLabel}><LogOut aria-hidden="true" /><span className="logout-label">{logoutLabel}</span></button>;
 
     return (
         <div className="workspace-layout">
             <a className="skip-link" href="#workspace-content">Lewati ke konten utama</a>
-            <aside className="workspace-sidebar">
+            <aside className={`workspace-sidebar${isSidebarCollapsed ? ' is-collapsed' : ''}`}>
                 <Brand href={config.urls.home} />
+                <button
+                    className="workspace-sidebar-toggle"
+                    type="button"
+                    onClick={toggleSidebar}
+                    aria-label={isSidebarCollapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+                    aria-expanded={!isSidebarCollapsed}
+                    aria-controls="workspace-navigation"
+                    title={isSidebarCollapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+                >
+                    <ChevronRight aria-hidden="true" />
+                </button>
                 <span className="sidebar-caption">{isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}</span>
-                <nav aria-label="Navigasi sistem">
-                    {menu.map((item) => { const Icon = item.icon; return <a key={item.key} href={item.href} aria-current={config.section === item.key ? 'page' : undefined}><Icon aria-hidden="true" />{item.label}</a>; })}
+                <nav id="workspace-navigation" aria-label="Navigasi sistem">
+                    {menu.map((item) => { const Icon = item.icon; return <a key={item.key} href={item.href} aria-current={config.section === item.key ? 'page' : undefined} aria-label={item.label} title={isSidebarCollapsed ? item.label : undefined}><Icon aria-hidden="true" /><span className="sidebar-menu-label">{item.label}</span></a>; })}
                 </nav>
-                <div className="sidebar-account"><span className="account-avatar"><UserRound aria-hidden="true" /></span><div><strong>{config.user?.name}</strong><span>{isAdmin ? 'Administrator' : 'Pelanggan'}</span></div></div>
+                <div className="sidebar-account"><span className="account-avatar"><UserRound aria-hidden="true" /></span><div className="sidebar-account-details"><strong>{config.user?.name}</strong><span>{isAdmin ? 'Administrator' : 'Pelanggan'}</span></div></div>
                 {logoutButton}
             </aside>
             <div className="workspace-body">
                 <header className="workspace-header">
                     <div><span className="eyebrow">{isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}</span><h1>{current.label}</h1></div>
-                    <div className="workspace-header-actions"><a href={config.urls.home} className="icon-button" aria-label="Kembali ke Home"><Home aria-hidden="true" /></a><NavigationDrawer links={menu.map((item) => ({ href: item.href, label: item.label, active: item.key === config.section }))} footer={logoutButton} /></div>
+                    <div className="workspace-header-actions">
+                        <a href={config.urls.home} className="icon-button" aria-label="Kembali ke Home"><Home aria-hidden="true" /></a>
+                        <NavigationDrawer
+                            variant="workspace"
+                            title={<Brand href={config.urls.home} />}
+                            caption={isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}
+                            account={{ name: config.user?.name ?? 'Akun', roleLabel: isAdmin ? 'Administrator' : 'Pelanggan' }}
+                            links={menu.map((item) => ({ href: item.href, label: item.label, active: item.key === config.section, icon: item.icon }))}
+                            footer={logoutButton}
+                        />
+                    </div>
                 </header>
                 <main id="workspace-content" className="workspace-content">
                     {error ? <div className="form-alert" role="alert">{error}</div> : null}
-                    {config.section === 'home' ? (
-                        <>
-                            <section className="workspace-welcome">
-                                <span className="tag-pill tag-pill-inverse">{isAdmin ? 'Kelola dengan lebih terarah' : 'Rencanakan ruangmu'}</span>
-                                <h2>Halo, {config.user?.name}.</h2>
-                                <p>{isAdmin ? 'Satu tempat untuk mengatur ruangan, fasilitas, dan penggunaan ruang.' : 'Temukan ruang yang sesuai, lalu kelola rencana penggunaanmu di sini.'}</p>
-                                <a className="button button-lime" href={isAdmin ? config.urls.admin.rooms : config.urls.customer.rooms}>{isAdmin ? 'Lihat Ruangan' : 'Cari Ruangan'}<ArrowUpRight aria-hidden="true" /></a>
-                            </section>
-                            <div className="workspace-shortcuts">
-                                {menu.filter((item) => !['home', 'account'].includes(item.key)).slice(0, 3).map((item) => { const Icon = item.icon; return <a href={item.href} key={item.key}><span className="shortcut-icon"><Icon aria-hidden="true" /></span><h3>{item.label}</h3><span>Buka halaman<ArrowUpRight aria-hidden="true" /></span></a>; })}
-                            </div>
-                        </>
-                    ) : config.section === 'account' ? (
+                    {config.section === 'home' ? <WorkspaceOverview config={config} /> : config.section === 'account' ? (
                         <section className="profile-panel" aria-labelledby="profile-title">
                             <span className="auth-icon"><UserRound aria-hidden="true" /></span><h2 id="profile-title">Informasi akunmu</h2>
                             <dl><div><dt>Nama lengkap</dt><dd>{config.user?.name}</dd></div><div><dt>Username</dt><dd>{config.user?.username ?? 'Belum diisi'}</dd></div><div><dt>Alamat email</dt><dd>{config.user?.email ?? 'Belum diisi'}</dd></div><div><dt>Jenis akun</dt><dd>{config.user?.role === 'admin' ? 'Administrator' : 'Pelanggan'}</dd></div></dl>
                             {logoutButton}
                         </section>
-                    ) : (
-                        <section className="workspace-empty" aria-labelledby="workspace-empty-title">
-                            <span className="empty-icon"><CurrentIcon aria-hidden="true" /></span>
-                            <span className="tag-pill">{current.label}</span>
-                            <h2 id="workspace-empty-title">{config.section === 'rooms' ? 'Ruang berikutnya dimulai di sini.' : `Data ${current.label.toLowerCase()} belum tersedia.`}</h2>
-                            <p>{isAdmin ? 'Halaman pengelolaan ini sudah disiapkan. Pengolahan data ruangan, fasilitas, reservasi, dan laporan belum diaktifkan.' : 'Informasi ruang dan reservasi akan tersedia setelah pengelola menyiapkan layanan pemesanan.'}</p>
-                            {config.section === 'rooms' && !isAdmin ? <div className="booking-flow-note"><span>Pilih ruang</span><ArrowUpRight aria-hidden="true" /><span>Tentukan jadwal</span><ArrowUpRight aria-hidden="true" /><span>Konfirmasi reservasi</span></div> : null}
-                            <a href={isAdmin ? config.urls.admin.home : config.urls.customer.home} className="button button-outline">Kembali ke Beranda<ArrowUpRight aria-hidden="true" /></a>
-                        </section>
-                    )}
+                    ) : isAdmin ? config.section === 'rooms' ? <AdminRooms config={config} /> : config.section === 'facilities' ? <AdminFacilities config={config} /> : config.section === 'reservations' ? <AdminReservations config={config} /> : config.section === 'maintenance' ? <AdminMaintenance config={config} /> : <AdminReports config={config} /> : config.section === 'rooms' ? <CustomerRooms config={config} /> : <CustomerBookings config={config} />}
                     <p className="workspace-footer"><ShieldCheck aria-hidden="true" />{isAdmin ? 'Akses administrator' : 'Akun pelanggan'} · RuangTemu</p>
                 </main>
             </div>
