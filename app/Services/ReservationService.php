@@ -6,9 +6,11 @@ use App\Models\MaintenanceBlock;
 use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\User;
+use App\Notifications\ReservationEventNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -50,7 +52,7 @@ class ReservationService
 
     public function create(User $user, array $input, Carbon $start, Carbon $end): Reservation
     {
-        return DB::transaction(function () use ($user, $input, $start, $end) {
+        $reservation = DB::transaction(function () use ($user, $input, $start, $end) {
             $room = Room::query()->lockForUpdate()->findOrFail($input['room_id']);
             if ($start->lte(now())) {
                 throw ValidationException::withMessages(['start_time' => 'Waktu pemesanan sudah dimulai. Pilih jadwal lain.']);
@@ -64,23 +66,31 @@ class ReservationService
             ]);
             return $reservation->load(['room.facilities', 'user']);
         });
+
+        $this->notifyUser($reservation, 'created');
+
+        return $reservation;
     }
 
     public function cancel(Reservation $reservation, User $user): Reservation
     {
         abort_unless($reservation->user_id === $user->id, 404);
-        return DB::transaction(function () use ($reservation) {
+        $updated = DB::transaction(function () use ($reservation) {
             Room::withTrashed()->lockForUpdate()->findOrFail($reservation->room_id);
             $current = Reservation::query()->lockForUpdate()->findOrFail($reservation->id);
             if (! $current->can_cancel) throw ValidationException::withMessages(['reservation' => 'Reservasi hanya dapat dibatalkan sebelum jam mulai dan sebelum check-in.']);
             $current->update(['status' => 'cancelled', 'cancelled_at' => now()]);
             return $current->load(['room.facilities', 'user']);
         });
+
+        $this->notifyUser($updated, 'cancelled');
+
+        return $updated;
     }
 
     public function transition(Reservation $reservation, string $action): Reservation
     {
-        return DB::transaction(function () use ($reservation, $action) {
+        $updated = DB::transaction(function () use ($reservation, $action) {
             Room::withTrashed()->lockForUpdate()->findOrFail($reservation->room_id);
             $current = Reservation::query()->lockForUpdate()->findOrFail($reservation->id);
             if (! in_array($action, $current->allowed_actions, true)) {
@@ -99,6 +109,24 @@ class ReservationService
             $current->update($values);
             return $current->load(['room.facilities', 'user']);
         });
+
+        $this->notifyUser($updated, $action);
+
+        return $updated;
+    }
+
+    private function notifyUser(Reservation $reservation, string $action): void
+    {
+        try {
+            if ($reservation->user) {
+                $reservation->user->notify(new ReservationEventNotification($reservation, $action));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal mengirimkan notifikasi reservasi: '.$e->getMessage(), [
+                'reservation_id' => $reservation->id,
+                'action' => $action,
+            ]);
+        }
     }
 
     public function createMaintenance(array $input, Carbon $start, Carbon $end): MaintenanceBlock

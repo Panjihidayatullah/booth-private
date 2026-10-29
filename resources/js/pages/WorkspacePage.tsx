@@ -10,8 +10,11 @@ import AdminFacilities from '../features/reservations/AdminFacilities';
 import AdminReservations from '../features/reservations/AdminReservations';
 import AdminMaintenance from '../features/reservations/AdminMaintenance';
 import AdminReports from '../features/reservations/AdminReports';
+import CustomerProfile from '../features/account/CustomerProfile';
+import MobileBottomNav, { type MobileNavItem } from '../components/MobileBottomNav';
+import NotificationBell from '../components/NotificationBell';
 import { describeRequestError, http } from '../lib/http';
-import type { AppConfig } from '../types/app';
+import type { Account, AppConfig } from '../types/app';
 
 interface WorkspacePageProps {
     config: AppConfig;
@@ -31,6 +34,7 @@ function getInitialSidebarState() {
 
 export default function WorkspacePage({ config }: WorkspacePageProps) {
     const isAdmin = config.portal === 'admin';
+    const [currentUser, setCurrentUser] = useState<Account | null>(config.user);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(getInitialSidebarState);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [error, setError] = useState('');
@@ -48,6 +52,25 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
         { key: 'account', label: 'Akun Saya', href: config.urls.customer.account, icon: UserRound },
     ];
     const current = menu.find((item) => item.key === config.section) ?? menu[0];
+    const mobileNavItems: MobileNavItem[] = menu.map((item) => ({
+        key: item.key,
+        label: isAdmin
+            ? item.key === 'reservations'
+                ? 'Reservasi'
+                : item.key === 'maintenance'
+                ? 'Rawat'
+                : item.label
+            : item.key === 'rooms'
+            ? 'Ruangan'
+            : item.key === 'bookings'
+            ? 'Reservasi'
+            : item.key === 'account'
+            ? 'Akun'
+            : item.label,
+        href: item.href,
+        icon: item.icon,
+        active: config.section === item.key,
+    }));
 
     async function logout() {
         if (isLoggingOut) return;
@@ -99,19 +122,32 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
                 <nav id="workspace-navigation" aria-label="Navigasi sistem">
                     {menu.map((item) => { const Icon = item.icon; return <a key={item.key} href={item.href} aria-current={config.section === item.key ? 'page' : undefined} aria-label={item.label} title={isSidebarCollapsed ? item.label : undefined}><Icon aria-hidden="true" /><span className="sidebar-menu-label">{item.label}</span></a>; })}
                 </nav>
-                <div className="sidebar-account"><span className="account-avatar"><UserRound aria-hidden="true" /></span><div className="sidebar-account-details"><strong>{config.user?.name}</strong><span>{isAdmin ? 'Administrator' : 'Pelanggan'}</span></div></div>
+                <div className="sidebar-account"><span className="account-avatar"><UserRound aria-hidden="true" /></span><div className="sidebar-account-details"><strong>{currentUser?.name}</strong><span>{isAdmin ? 'Administrator' : 'Pelanggan'}</span></div></div>
                 {logoutButton}
             </aside>
             <div className="workspace-body">
                 <header className="workspace-header">
                     <div><span className="eyebrow">{isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}</span><h1>{current.label}</h1></div>
                     <div className="workspace-header-actions">
+                        {!isAdmin ? <NotificationBell apiBaseUrl={config.apiBaseUrl} /> : null}
                         <a href={config.urls.home} className="icon-button" aria-label="Kembali ke Home"><Home aria-hidden="true" /></a>
+                        {isAdmin ? (
+                            <button
+                                className="icon-button mobile-header-logout"
+                                type="button"
+                                onClick={logout}
+                                disabled={isLoggingOut}
+                                aria-label="Sign out"
+                                title="Sign out"
+                            >
+                                <LogOut aria-hidden="true" />
+                            </button>
+                        ) : null}
                         <NavigationDrawer
                             variant="workspace"
                             title={<Brand href={config.urls.home} />}
                             caption={isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}
-                            account={{ name: config.user?.name ?? 'Akun', roleLabel: isAdmin ? 'Administrator' : 'Pelanggan' }}
+                            account={{ name: currentUser?.name ?? 'Akun', roleLabel: isAdmin ? 'Administrator' : 'Pelanggan' }}
                             links={menu.map((item) => ({ href: item.href, label: item.label, active: item.key === config.section, icon: item.icon }))}
                             footer={logoutButton}
                         />
@@ -120,15 +156,20 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
                 <main id="workspace-content" className="workspace-content">
                     {error ? <div className="form-alert" role="alert">{error}</div> : null}
                     {config.section === 'home' ? <WorkspaceOverview config={config} /> : config.section === 'account' ? (
-                        <section className="profile-panel" aria-labelledby="profile-title">
-                            <span className="auth-icon"><UserRound aria-hidden="true" /></span><h2 id="profile-title">Informasi akunmu</h2>
-                            <dl><div><dt>Nama lengkap</dt><dd>{config.user?.name}</dd></div><div><dt>Username</dt><dd>{config.user?.username ?? 'Belum diisi'}</dd></div><div><dt>Alamat email</dt><dd>{config.user?.email ?? 'Belum diisi'}</dd></div><div><dt>Jenis akun</dt><dd>{config.user?.role === 'admin' ? 'Administrator' : 'Pelanggan'}</dd></div></dl>
-                            {logoutButton}
-                        </section>
+                        <CustomerProfile
+                            config={config}
+                            user={currentUser}
+                            onUserUpdated={setCurrentUser}
+                            logoutButton={logoutButton}
+                        />
                     ) : isAdmin ? config.section === 'rooms' ? <AdminRooms config={config} /> : config.section === 'facilities' ? <AdminFacilities config={config} /> : config.section === 'reservations' ? <AdminReservations config={config} /> : config.section === 'maintenance' ? <AdminMaintenance config={config} /> : <AdminReports config={config} /> : config.section === 'rooms' ? <CustomerRooms config={config} /> : <CustomerBookings config={config} />}
                     <p className="workspace-footer"><ShieldCheck aria-hidden="true" />{isAdmin ? 'Akses administrator' : 'Akun pelanggan'} · RuangTemu</p>
                 </main>
             </div>
+            <MobileBottomNav
+                items={mobileNavItems}
+                ariaLabel={isAdmin ? 'Navigasi Admin Mobile' : 'Navigasi Pelanggan Mobile'}
+            />
         </div>
     );
 }

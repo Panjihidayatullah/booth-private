@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUpRight, CalendarDays, LayoutDashboard, LogIn, Mic, ShieldCheck, TicketCheck, Users } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, Building2, CalendarDays, Home, LayoutDashboard, LogIn, Mic, ShieldCheck, TicketCheck, Users } from 'lucide-react';
 import Brand from '../components/Brand';
 import NavigationDrawer from '../components/NavigationDrawer';
+import MobileBottomNav, { type MobileNavItem } from '../components/MobileBottomNav';
 import PublicRoomCatalog from '../features/reservations/PublicRoomCatalog';
 import type { AppConfig } from '../types/app';
 
@@ -19,6 +20,7 @@ const MAIN_NAVIGATION = [
 export default function LandingPage({ config }: LandingPageProps) {
     const accountUrl = config.user ? config.urls.dashboard : config.urls.login;
     const [isHeaderScrolled, setIsHeaderScrolled] = useState(() => typeof window !== 'undefined' && window.scrollY > 24);
+    const [activeSection, setActiveSection] = useState('home');
 
     useEffect(() => {
         const updateHeader = () => setIsHeaderScrolled(window.scrollY > 24);
@@ -26,8 +28,63 @@ export default function LandingPage({ config }: LandingPageProps) {
         updateHeader();
         window.addEventListener('scroll', updateHeader, { passive: true });
 
-        return () => window.removeEventListener('scroll', updateHeader);
+        const sections = ['home', 'about', 'ruangan', 'cara-reservasi'];
+        const handleScroll = () => {
+            const scrollPos = window.scrollY + 220;
+            for (const sectionId of [...sections].reverse()) {
+                const el = document.getElementById(sectionId);
+                if (el && el.offsetTop <= scrollPos) {
+                    setActiveSection(sectionId);
+                    break;
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener('scroll', updateHeader);
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
+
+    const publicMobileNavItems: MobileNavItem[] = [
+        {
+            key: 'home',
+            label: 'Home',
+            href: '#home',
+            icon: Home,
+            active: activeSection === 'home',
+        },
+        {
+            key: 'ruangan',
+            label: 'Ruangan',
+            href: '#ruangan',
+            icon: Building2,
+            active: activeSection === 'ruangan',
+        },
+        {
+            key: 'cara-reservasi',
+            label: 'Alur',
+            href: '#cara-reservasi',
+            icon: CalendarDays,
+            active: activeSection === 'cara-reservasi',
+        },
+        {
+            key: 'about',
+            label: 'Tentang',
+            href: '#about',
+            icon: Users,
+            active: activeSection === 'about',
+        },
+        {
+            key: 'account',
+            label: config.user ? 'Akun' : 'Masuk',
+            href: accountUrl,
+            icon: config.user ? LayoutDashboard : LogIn,
+            active: false,
+        },
+    ];
 
     return (
         <div className="landing-page">
@@ -97,6 +154,7 @@ export default function LandingPage({ config }: LandingPageProps) {
                     <div className="footer-bottom"><Brand href={config.urls.home} light /><p>Ruang untuk bertemu. Waktu untuk fokus.</p><nav aria-label="Navigasi footer"><a href="#home">Home</a><a href="#about">About</a><a href={accountUrl}>{config.user ? 'Dashboard' : 'Sign in'}</a></nav></div>
                 </div>
             </footer>
+            <MobileBottomNav items={publicMobileNavItems} ariaLabel="Navigasi Halaman Utama Mobile" />
         </div>
     );
 }

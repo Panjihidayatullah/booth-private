@@ -8,6 +8,7 @@ use App\Models\Room;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -28,9 +29,30 @@ class RoomController extends Controller
         return response()->json(['data' => $room->load('facilities')]);
     }
 
+    public function uploadImage(Request $request): JsonResponse
+    {
+        $request->validate([
+            'image' => ['required', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
+        ]);
+
+        $path = $request->file('image')->store('rooms', 'public');
+
+        return response()->json([
+            'data' => [
+                'url' => '/storage/'.$path,
+                'path' => $path,
+            ],
+            'message' => 'Foto berhasil diunggah.',
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $input = $this->validated($request, true);
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('rooms', 'public');
+            $input['image_url'] = '/storage/'.$path;
+        }
         $room = DB::transaction(function () use ($input) {
             $this->lockFacilities($input['facility_ids'] ?? []);
             $room = Room::create([...$input, 'is_active' => $input['is_active'] ?? true, 'floor_plan' => $input['floor_plan'] ?? Room::DEFAULT_FLOOR_PLAN]);
@@ -44,7 +66,7 @@ class RoomController extends Controller
     public function update(Request $request, Room $room): JsonResponse
     {
         $input = $this->validated($request, false);
-        $room = DB::transaction(function () use ($room, $input) {
+        $room = DB::transaction(function () use ($room, $input, $request) {
             $current = Room::query()->lockForUpdate()->findOrFail($room->id);
             if (array_key_exists('facility_ids', $input)) $this->lockFacilities($input['facility_ids']);
             $future = $current->reservations()->whereIn('status', Reservation::ACTIVE_STATUSES)->where('ends_at', '>', now());
@@ -53,6 +75,14 @@ class RoomController extends Controller
             }
             if (isset($input['capacity']) && (clone $future)->where('attendees', '>', $input['capacity'])->exists()) {
                 throw ValidationException::withMessages(['capacity' => 'Kapasitas baru lebih kecil dari jumlah peserta reservasi aktif.']);
+            }
+            if ($request->hasFile('image')) {
+                if ($current->image_url && str_starts_with($current->image_url, '/storage/')) {
+                    $oldPath = str_replace('/storage/', '', $current->image_url);
+                    Storage::disk('public')->delete($oldPath);
+                }
+                $path = $request->file('image')->store('rooms', 'public');
+                $input['image_url'] = '/storage/'.$path;
             }
             $wasActive = $current->is_active;
             $current->update($input);
@@ -93,8 +123,10 @@ class RoomController extends Controller
             'name' => [$required, 'string', 'max:150'], 'type' => [$required, Rule::in(['workspace', 'booth'])],
             'capacity' => [$required, 'integer', 'min:1', 'max:1000'], 'location' => [$required, 'string', 'max:200'],
             'floor' => [$required, 'string', 'max:80'], 'rules' => [$required, 'string', 'max:5000'],
-            'description' => ['nullable', 'string', 'max:5000'], 'is_active' => ['sometimes', 'boolean'],
+            'description' => [$creating ? 'required' : 'sometimes', 'required', 'string', 'max:5000'],
+            'is_active' => ['sometimes', 'boolean'],
             'maintenance_notes' => ['nullable', 'string', 'max:5000'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'],
             'image_url' => ['nullable', 'string', 'max:1000', 'regex:#^(?:https?://[^\s]+|/(?:images|storage)/[A-Za-z0-9/_\.\-]+)$#'],
             'facility_ids' => ['sometimes', 'array', 'max:50'], 'facility_ids.*' => ['integer', 'distinct', 'exists:facilities,id'],
             'floor_plan' => ['sometimes', 'array:width,depth,desks,door'],

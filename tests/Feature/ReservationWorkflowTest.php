@@ -6,8 +6,10 @@ use App\Models\Admin;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Tests\TestCase;
 
@@ -123,6 +125,24 @@ class ReservationWorkflowTest extends TestCase
         $this->asAdmin();
         $this->postJson('/api/admin/rooms', $this->roomPayload(['image_url' => 'javascript:alert(1)']))->assertUnprocessable();
         $this->postJson('/api/admin/rooms', $this->roomPayload(['floor_plan' => ['width' => -1, 'depth' => 0, 'desks' => -1, 'door' => 'invalid']]))->assertUnprocessable();
+        $this->postJson('/api/admin/rooms', $this->roomPayload(['description' => '']))->assertUnprocessable();
+    }
+
+    public function test_admin_can_upload_room_image(): void
+    {
+        Storage::fake('public');
+        $this->asAdmin();
+
+        $file = UploadedFile::fake()->image('test-room.jpg', 600, 400);
+        $response = $this->post('/api/admin/rooms/upload-image', ['image' => $file])
+            ->assertOk()
+            ->assertJsonStructure(['data' => ['url', 'path'], 'message']);
+
+        $path = $response->json('data.path');
+        Storage::disk('public')->assertExists($path);
+
+        $room = $this->room(['image_url' => $response->json('data.url')]);
+        $this->assertEquals($response->json('data.url'), $room['image_url']);
     }
 
     public function test_catalog_filters_by_type_capacity_facilities_and_hides_inactive_rooms(): void
@@ -399,5 +419,34 @@ class ReservationWorkflowTest extends TestCase
         $this->getJson('/api/workspace/summary')->assertOk()->assertJsonPath('data.upcoming', 1);
         $this->asAdmin();
         $this->getJson('/api/workspace/summary')->assertOk()->assertJsonPath('data.today', 2);
+    }
+
+    public function test_customer_receives_in_app_and_email_notifications(): void
+    {
+        $room = $this->room();
+        $this->asCustomer();
+
+        // 1. Booking triggers notification
+        $reservation = $this->booking($room['id']);
+
+        $response = $this->getJson('/api/customer/notifications')->assertOk();
+        $response->assertJsonPath('unread_count', 1);
+        $this->assertEquals('created', $response->json('data.0.data.action'));
+        $notificationId = $response->json('data.0.id');
+
+        // 2. Mark as read
+        $this->postJson("/api/customer/notifications/{$notificationId}/read")->assertOk()->assertJsonPath('unread_count', 0);
+
+        // Advance time so the new notification has a strictly newer timestamp
+        $this->travel(1)->seconds();
+
+        // 3. Cancellation triggers notification
+        $this->postJson('/api/customer/reservations/'.$reservation['id'].'/cancel')->assertOk();
+        $response = $this->getJson('/api/customer/notifications')->assertOk();
+        $response->assertJsonPath('unread_count', 1);
+        $this->assertEquals('cancelled', $response->json('data.0.data.action'));
+
+        // 4. Mark all as read
+        $this->postJson('/api/customer/notifications/read-all')->assertOk()->assertJsonPath('unread_count', 0);
     }
 }

@@ -40,7 +40,7 @@ class RegisterRequest extends FormRequest
                 'regex:'.config('auth.username_policy.pattern'),
                 Rule::unique(User::class),
             ],
-            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique(User::class)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
             'password' => [
                 'required', 'string', 'confirmed',
                 'min:'.config('auth.password_policy.min_length'),
@@ -60,6 +60,7 @@ class RegisterRequest extends FormRequest
             'username.max' => 'Username maksimal :max karakter.',
             'username.regex' => 'Username hanya boleh berisi huruf, angka, titik, garis bawah, dan tanda hubung.',
             'username.unique' => 'Username sudah digunakan.',
+            'email.required' => 'Masukkan alamat email.',
             'email.email' => 'Masukkan alamat email yang valid.',
             'email.unique' => 'Alamat email sudah terdaftar. Silakan sign in.',
             'password.required' => 'Buat kata sandi untuk akunmu.',

@@ -152,8 +152,8 @@ export default function AuthPage({ config }: AuthPageProps) {
                                 {fieldError('username') ? <p id="username-error" className="field-error">{fieldError('username')}</p> : null}
                             </div>
                         <div className="form-field">
-                            <label htmlFor="email">Alamat email <span className="optional-label">(opsional)</span></label>
-                            <input id="email" name="email" type="email" inputMode="email" autoComplete="email" maxLength={255} aria-invalid={Boolean(fieldError('email'))} aria-describedby={fieldError('email') ? 'email-error' : undefined} disabled={isSubmitting} />
+                            <label htmlFor="email">Alamat email</label>
+                            <input id="email" name="email" type="email" inputMode="email" autoComplete="email" required maxLength={255} aria-invalid={Boolean(fieldError('email'))} aria-describedby={fieldError('email') ? 'email-error' : undefined} disabled={isSubmitting} />
                             {fieldError('email') ? <p id="email-error" className="field-error">{fieldError('email')}</p> : null}
                         </div>
                             </>

@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\RoomController;
@@ -51,9 +52,14 @@ Route::middleware('auth:web')->prefix('api/customer')->group(function () {
     Route::get('/reservations/{reservation}/ticket', [ReservationController::class, 'ticket'])->name('api.customer.reservations.ticket');
     Route::get('/reservations/{reservation}', [ReservationController::class, 'show']);
     Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancel']);
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('api.customer.notifications');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('api.customer.notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('api.customer.notifications.read-all');
+    Route::put('/profile', [AuthController::class, 'updateProfile'])->name('api.customer.profile.update');
 });
 
 Route::middleware(['auth:web,admin', 'can:access-admin'])->prefix('api/admin')->group(function () {
+    Route::post('/rooms/upload-image', [RoomController::class, 'uploadImage']);
     Route::apiResource('rooms', RoomController::class);
     Route::apiResource('facilities', FacilityController::class);
     Route::get('/maintenance', [MaintenanceController::class, 'index']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Models\Admin;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -77,6 +78,25 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return $this->authenticatedResponse(Auth::guard($guardName)->user());
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user('web') ?? $this->currentAccount();
+
+        $attributes = $request->safe()->only(['name', 'username', 'email']);
+
+        if ($request->filled('password')) {
+            $attributes['password'] = $request->validated('password');
+        }
+
+        $user->update($attributes);
+
+        return response()->json([
+            'message' => 'Profil akun berhasil diperbarui.',
+            'user' => $user->fresh()->publicProfile(),
+        ]);
     }
 
     public function logout(Request $request): JsonResponse

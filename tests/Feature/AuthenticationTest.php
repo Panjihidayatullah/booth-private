@@ -69,11 +69,11 @@ class AuthenticationTest extends TestCase
         $response->assertCookie('XSRF-TOKEN');
     }
 
-    public function test_a_customer_can_register_without_an_email(): void
+    public function test_customer_registration_requires_an_email(): void
     {
         $this->postJson(route('auth.register'), $this->registrationData(['email' => null]))
-            ->assertCreated()->assertJsonPath('user.email', null);
-        $this->assertDatabaseHas('users', ['username' => 'pelanggan.uji', 'email' => null]);
+            ->assertUnprocessable()->assertJsonValidationErrors('email');
+        $this->assertDatabaseCount('users', 0);
     }
 
     public function test_public_registration_cannot_create_admin_accounts(): void
