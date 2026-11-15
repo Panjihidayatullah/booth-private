@@ -175,7 +175,7 @@ export default function AdminRooms({ config }: { config: AppConfig }) {
                 <div className="rta-tags">{room.facilities.map(facility => <span className="rta-tag" key={facility.id}>{facility.name}</span>)}</div>
                 <div className="rta-card-actions"><button className="rt-button secondary" type="button" onClick={() => openEditor(room)}><Edit3 />Ubah</button><button className="rt-button secondary" type="button" onClick={() => { setError(''); setSuccess(''); setDeleting(room); }}><Trash2 />Arsipkan</button></div>
             </div>
-        </article>)}</div> : <Empty title={query ? 'Ruangan tidak ditemukan' : 'Belum ada ruangan'}>{query ? 'Coba gunakan nama atau lokasi lain.' : 'Tambahkan ruangan pertama beserta kapasitas dan fasilitasnya agar pelanggan dapat melakukan reservasi.'}</Empty>}
+        </article>)}</div> : <Empty title={query ? 'Ruangan tidak ditemukan' : 'Belum ada ruangan'}>{query ? 'Coba gunakan nama atau lokasi lain.' : 'Tambahkan ruangan pertama beserta kapasitas dan fasilitasnya agar penyewa dapat melakukan reservasi.'}</Empty>}
         {editor && draft ? <AdminDialog title={editor.id ? 'Ubah ruangan' : 'Tambah ruangan'} onClose={closeEditor} busy={busy} wide footer={<><button className="rt-button secondary" type="button" disabled={busy} onClick={closeEditor}>Batal</button><button form="admin-room-form" className="rt-button primary" type="submit" disabled={busy}>{busy ? 'Menyimpan...' : 'Simpan ruangan'}</button></>}>
             <Feedback error={error || facilities.error} />
             <form id="admin-room-form" onSubmit={save} className="rt-form-grid">

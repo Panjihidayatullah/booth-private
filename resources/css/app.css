@@ -345,12 +345,27 @@ svg { width: 20px; height: 20px; flex-shrink: 0; }
         transition: transform 0.25s ease;
     }
     .mobile-bottom-nav-inner {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: space-around;
         max-width: 600px;
         margin: 0 auto;
         padding: 0 4px;
+    }
+    .mobile-bottom-nav-indicator-track {
+        position: absolute;
+        inset: 17px 4px auto;
+        pointer-events: none;
+    }
+    .mobile-bottom-nav-indicator {
+        position: absolute;
+        width: 38px;
+        height: 28px;
+        transform: translate(-50%, -50%);
+        border-radius: 999px;
+        background: var(--brand-lime, #cbef63);
+        box-shadow: 0 2px 8px rgba(163, 230, 21, 0.28);
     }
     .mobile-bottom-nav-item {
         position: relative;
@@ -392,6 +407,10 @@ svg { width: 20px; height: 20px; flex-shrink: 0; }
         color: var(--forest-dark, #13281e);
         transform: translateY(-1px);
         box-shadow: 0 2px 8px rgba(163, 230, 21, 0.28);
+    }
+    .has-moving-indicator .mobile-bottom-nav-item.is-active .mobile-bottom-nav-icon-wrap {
+        background: transparent;
+        box-shadow: none;
     }
     .mobile-bottom-nav-item.is-active .mobile-bottom-nav-icon {
         stroke-width: 2.3;
@@ -602,6 +621,8 @@ svg { width: 20px; height: 20px; flex-shrink: 0; }
 
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
+    .mobile-bottom-nav, .mobile-bottom-nav-item, .mobile-bottom-nav-icon-wrap, .mobile-bottom-nav-label { transition: none; }
+    .mobile-bottom-nav-item:active { transform: none; }
     .site-scrollbar, .site-scrollbar-thumb::before { transition: none; }
     .auth-tabs-indicator, .auth-tabs a, .auth-mode-heading, .auth-mode-content { transition: none; }
     .button, .landing-header, .landing-header .brand, .landing-header .desktop-navigation a { transition: none; }

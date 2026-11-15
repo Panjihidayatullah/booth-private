@@ -118,16 +118,16 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
                 >
                     <ChevronRight aria-hidden="true" />
                 </button>
-                <span className="sidebar-caption">{isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}</span>
+                <span className="sidebar-caption">{isAdmin ? 'Portal Admin' : 'Portal Penyewa'}</span>
                 <nav id="workspace-navigation" aria-label="Navigasi sistem">
                     {menu.map((item) => { const Icon = item.icon; return <a key={item.key} href={item.href} aria-current={config.section === item.key ? 'page' : undefined} aria-label={item.label} title={isSidebarCollapsed ? item.label : undefined}><Icon aria-hidden="true" /><span className="sidebar-menu-label">{item.label}</span></a>; })}
                 </nav>
-                <div className="sidebar-account"><span className="account-avatar"><UserRound aria-hidden="true" /></span><div className="sidebar-account-details"><strong>{currentUser?.name}</strong><span>{isAdmin ? 'Administrator' : 'Pelanggan'}</span></div></div>
+                <div className="sidebar-account"><span className="account-avatar"><UserRound aria-hidden="true" /></span><div className="sidebar-account-details"><strong>{currentUser?.name}</strong><span>{isAdmin ? 'Administrator' : 'Penyewa'}</span></div></div>
                 {logoutButton}
             </aside>
             <div className="workspace-body">
                 <header className="workspace-header">
-                    <div><span className="eyebrow">{isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}</span><h1>{current.label}</h1></div>
+                    <div><span className="eyebrow">{isAdmin ? 'Portal Admin' : 'Portal Penyewa'}</span><h1>{current.label}</h1></div>
                     <div className="workspace-header-actions">
                         {!isAdmin ? <NotificationBell apiBaseUrl={config.apiBaseUrl} /> : null}
                         <a href={config.urls.home} className="icon-button" aria-label="Kembali ke Home"><Home aria-hidden="true" /></a>
@@ -146,8 +146,8 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
                         <NavigationDrawer
                             variant="workspace"
                             title={<Brand href={config.urls.home} />}
-                            caption={isAdmin ? 'Portal Admin' : 'Portal Pelanggan'}
-                            account={{ name: currentUser?.name ?? 'Akun', roleLabel: isAdmin ? 'Administrator' : 'Pelanggan' }}
+                            caption={isAdmin ? 'Portal Admin' : 'Portal Penyewa'}
+                            account={{ name: currentUser?.name ?? 'Akun', roleLabel: isAdmin ? 'Administrator' : 'Penyewa' }}
                             links={menu.map((item) => ({ href: item.href, label: item.label, active: item.key === config.section, icon: item.icon }))}
                             footer={logoutButton}
                         />
@@ -163,12 +163,12 @@ export default function WorkspacePage({ config }: WorkspacePageProps) {
                             logoutButton={logoutButton}
                         />
                     ) : isAdmin ? config.section === 'rooms' ? <AdminRooms config={config} /> : config.section === 'facilities' ? <AdminFacilities config={config} /> : config.section === 'reservations' ? <AdminReservations config={config} /> : config.section === 'maintenance' ? <AdminMaintenance config={config} /> : <AdminReports config={config} /> : config.section === 'rooms' ? <CustomerRooms config={config} /> : <CustomerBookings config={config} />}
-                    <p className="workspace-footer"><ShieldCheck aria-hidden="true" />{isAdmin ? 'Akses administrator' : 'Akun pelanggan'} · RuangTemu</p>
+                    <p className="workspace-footer"><ShieldCheck aria-hidden="true" />{isAdmin ? 'Akses administrator' : 'Akun penyewa'} · RuangTemu</p>
                 </main>
             </div>
             <MobileBottomNav
                 items={mobileNavItems}
-                ariaLabel={isAdmin ? 'Navigasi Admin Mobile' : 'Navigasi Pelanggan Mobile'}
+                ariaLabel={isAdmin ? 'Navigasi Admin Mobile' : 'Navigasi Penyewa Mobile'}
             />
         </div>
     );

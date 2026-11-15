@@ -128,7 +128,7 @@ export default function AuthPage({ config }: AuthPageProps) {
                                 <h1 id="auth-title">{isSignUp ? 'Buat akunmu.' : isAdminLogin ? 'Masuk ke panel admin.' : 'Masuk ke akunmu.'}</h1>
                             </div>
                         </div>
-                        <p className="auth-intro">{isSignUp ? 'Daftarkan akun pelanggan untuk mulai merencanakan penggunaan ruang.' : isAdminLogin ? 'Gunakan akun admin untuk mengakses panel pengelolaan.' : 'Sign in untuk melanjutkan aktivitas dan mengakses ruangmu.'}</p>
+                        <p className="auth-intro">{isSignUp ? 'Daftarkan akun penyewa untuk mulai merencanakan penggunaan ruang.' : isAdminLogin ? 'Gunakan akun admin untuk mengakses panel pengelolaan.' : 'Sign in untuk melanjutkan aktivitas dan mengakses ruangmu.'}</p>
                     </div>
                     {!isAdminLogin ? <nav className="auth-tabs" aria-label="Pilihan halaman akun" data-active-mode={selectedMode}>
                         <span className="auth-tabs-indicator" aria-hidden="true" />

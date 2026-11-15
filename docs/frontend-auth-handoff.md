@@ -10,22 +10,22 @@ Laravel 12 melayani React TypeScript melalui Vite dan Tailwind CSS yang sudah ad
 
 | Jenis akun | Tabel | Model | Guard | Halaman login | Identitas login |
 | --- | --- | --- | --- | --- | --- |
-| Pelanggan | `users` | `User` | `web` | `/sign-in` | Username atau email |
+| Penyewa | `users` | `User` | `web` | `/sign-in` | Username atau email |
 | Administrator | `admins` | `Admin` | `admin` | `/admin/login` | Username |
 
-Admin bukan baris pelanggan dengan role berbeda. Akun admin tidak dibuat oleh sign up publik, tidak dipindahkan dari tabel pelanggan, dan tidak diperiksa menggunakan provider pelanggan. Nilai role pada respons frontend hanya label jenis akun yang dihitung dari model, bukan sumber izin dari input pengguna.
+Admin bukan baris penyewa dengan role berbeda. Akun admin tidak dibuat oleh sign up publik, tidak dipindahkan dari tabel penyewa, dan tidak diperiksa menggunakan provider penyewa. Nilai role pada respons frontend hanya label jenis akun yang dihitung dari model, bukan sumber izin dari input pengguna.
 
-Halaman login pelanggan dan admin mempunyai URL serta endpoint berbeda, tanpa pemilih peran. Server menentukan tabel dan guard berdasarkan endpoint; input `account_type` maupun `role` ditolak. Halaman admin tidak menyediakan sign up. Tamu yang membuka panel admin diarahkan ke `/admin/login`; halaman pelanggan mengarah ke `/sign-in`. Setelah login berhasil, sesi guard lainnya diakhiri. Logout mengakhiri keduanya. Pelanggan tidak dapat mengakses halaman admin meskipun ID atau username pada kedua tabel sama.
+Halaman login penyewa dan admin mempunyai URL serta endpoint berbeda, tanpa pemilih peran. Server menentukan tabel dan guard berdasarkan endpoint; input `account_type` maupun `role` ditolak. Halaman admin tidak menyediakan sign up. Tamu yang membuka panel admin diarahkan ke `/admin/login`; halaman penyewa mengarah ke `/sign-in`. Setelah login berhasil, sesi guard lainnya diakhiri. Logout mengakhiri keduanya. Penyewa tidak dapat mengakses halaman admin meskipun ID atau username pada kedua tabel sama.
 
-Sign up publik menerima nama, username, email opsional, dan kata sandi dengan konfirmasi. Username dinormalisasi menjadi huruf kecil. Email pelanggan dapat kosong sehingga sistem tidak mengarang alamat email untuk akun berbasis username. Kata sandi pendaftaran publik tetap minimal sesuai `config/auth.php`.
+Sign up publik menerima nama, username, email opsional, dan kata sandi dengan konfirmasi. Username dinormalisasi menjadi huruf kecil. Email penyewa dapat kosong sehingga sistem tidak mengarang alamat email untuk akun berbasis username. Kata sandi pendaftaran publik tetap minimal sesuai `config/auth.php`.
 
 ## Database dan pembuatan akun
 
-- `2026_10_18_000000_add_username_to_users_table.php` menambah username unik yang nullable pada pelanggan serta menjadikan email opsional. Ini mempertahankan akun dan email lama.
+- `2026_10_18_000000_add_username_to_users_table.php` menambah username unik yang nullable pada penyewa serta menjadikan email opsional. Ini mempertahankan akun dan email lama.
 - `2026_10_18_000001_create_admins_table.php` membuat tabel akun admin terpisah.
-- Rencana lama menambahkan role pada tabel pelanggan tidak diterapkan dan sudah diganti dengan dua migrasi tersebut.
+- Rencana lama menambahkan role pada tabel penyewa tidak diterapkan dan sudah diganti dengan dua migrasi tersebut.
 
-Jangan menjalankan `migrate:fresh`, reset, atau seeder untuk penyiapan akun ini. Periksa status migrasi terlebih dahulu. Setelah skema siap, perintah `account:create` menerima jenis akun, username, nama, serta email pelanggan opsional. Kata sandi dimasukkan melalui prompt tersembunyi, di-hash oleh model, lalu diverifikasi melalui provider login sebelum transaksi selesai. Akun yang sudah ada tidak ditimpa oleh perintah ini.
+Jangan menjalankan `migrate:fresh`, reset, atau seeder untuk penyiapan akun ini. Periksa status migrasi terlebih dahulu. Setelah skema siap, perintah `account:create` menerima jenis akun, username, nama, serta email penyewa opsional. Kata sandi dimasukkan melalui prompt tersembunyi, di-hash oleh model, lalu diverifikasi melalui provider login sebelum transaksi selesai. Akun yang sudah ada tidak ditimpa oleh perintah ini.
 
 Opsi `--test-account` hanya berlaku pada lingkungan local/testing dan mengizinkan kata sandi uji pendek yang diminta secara eksplisit. Opsi ini tidak menurunkan aturan kata sandi sign up publik dan tidak dapat dipakai pada lingkungan production. Tidak ada kata sandi akun yang disimpan dalam sumber, seeder, atau dokumen ini.
 
@@ -36,17 +36,17 @@ Endpoint berada di middleware web dengan prefix `api/auth`, sehingga sesi dan CS
 | Metode | Endpoint | Fungsi |
 | --- | --- | --- |
 | GET | `/api/auth/session` | Identitas akun aktif atau null |
-| POST | `/api/auth/sign-up` | Membuat akun pelanggan dan sesi |
-| POST | `/api/auth/sign-in` | Login pelanggan: `login` berisi username/email, `password`, serta remember opsional |
+| POST | `/api/auth/sign-up` | Membuat akun penyewa dan sesi |
+| POST | `/api/auth/sign-in` | Login penyewa: `login` berisi username/email, `password`, serta remember opsional |
 | POST | `/api/auth/admin/sign-in` | Login admin: `login` berisi username, `password`, serta remember opsional |
-| POST | `/api/auth/sign-out` | Mengakhiri sesi pelanggan dan admin |
+| POST | `/api/auth/sign-out` | Mengakhiri sesi penyewa dan admin |
 
 ## Batas tahap ini
 
-Landing page, sign in/sign up, sesi, halaman identitas pelanggan, navigasi panel pelanggan/admin, dan logout telah diimplementasikan. Lima modul operasional sekarang tersambung ke database dan API:
+Landing page, sign in/sign up, sesi, halaman identitas penyewa, navigasi panel penyewa/admin, dan logout telah diimplementasikan. Lima modul operasional sekarang tersambung ke database dan API:
 
 1. Katalog serta pencarian ruangan berdasarkan jadwal, kapasitas, jenis, fasilitas, nama, dan lokasi; detail memuat aturan serta denah skematik.
-2. Pemesanan pelanggan, pemeriksaan ulang ketersediaan, penerbitan tiket, daftar mendatang/riwayat, dan pembatalan sebelum jam mulai.
+2. Pemesanan penyewa, pemeriksaan ulang ketersediaan, penerbitan tiket, daftar mendatang/riwayat, dan pembatalan sebelum jam mulai.
 3. Daftar reservasi admin beserta filter, check-in, check-out, dan penandaan Tidak Hadir dengan batas waktu di server.
 4. Pengelolaan ruangan/fasilitas, aktivasi/nonaktif, pengarsipan aman, serta blokir pemeliharaan yang memeriksa benturan.
 5. Ringkasan serta laporan pemakaian aktual, jam terjadwal, kapasitas operasional, pembatalan, Tidak Hadir, dan filter periode/ruangan.
@@ -70,15 +70,15 @@ Jangan menggunakan `migrate:fresh`, `migrate:refresh`, atau menjalankan seeder a
 php artisan account:create admin operator --name="Nama Pengelola"
 ```
 
-Masuk melalui `/admin/login`, tambahkan fasilitas pada `/admin/fasilitas`, lalu tambahkan ruangan aktif beserta kapasitas, lokasi/lantai, aturan, fasilitas, dan denah pada `/admin/ruangan`. Data ruangan aktif akan tampil di katalog publik dan pencarian pelanggan. Pengelola menangani jadwal pemeliharaan melalui `/admin/pemeliharaan`, reservasi serta kehadiran melalui `/admin/reservasi`, dan laporan melalui `/admin/laporan`.
+Masuk melalui `/admin/login`, tambahkan fasilitas pada `/admin/fasilitas`, lalu tambahkan ruangan aktif beserta kapasitas, lokasi/lantai, aturan, fasilitas, dan denah pada `/admin/ruangan`. Data ruangan aktif akan tampil di katalog publik dan pencarian penyewa. Pengelola menangani jadwal pemeliharaan melalui `/admin/pemeliharaan`, reservasi serta kehadiran melalui `/admin/reservasi`, dan laporan melalui `/admin/laporan`.
 
-Pelanggan mendaftar atau masuk melalui `/sign-up` dan `/sign-in`, memilih jadwal di `/pelanggan/ruangan`, membuka detail, melengkapi keperluan, memeriksa ringkasan, lalu mengonfirmasi. Tiket berasal dari reservasi yang benar-benar tersimpan. `/pelanggan/reservasi` menyediakan tiket, cetak, riwayat, dan pembatalan yang masih diizinkan server.
+Penyewa mendaftar atau masuk melalui `/sign-up` dan `/sign-in`, memilih jadwal di `/penyewa/ruangan`, membuka detail, melengkapi keperluan, memeriksa ringkasan, lalu mengonfirmasi. Tiket berasal dari reservasi yang benar-benar tersimpan. `/penyewa/reservasi` menyediakan tiket, cetak, riwayat, dan pembatalan yang masih diizinkan server.
 
 ## Berkas utama
 
-- `resources/js/pages/`: landing, formulir akun, serta shell pelanggan/admin.
+- `resources/js/pages/`: landing, formulir akun, serta shell penyewa/admin.
 - `resources/js/components/`: merek dan drawer bersama.
-- `resources/js/features/reservations/`: katalog, pencarian/pemesanan pelanggan, reservasi, modul admin, denah, tiket, dan ringkasan.
+- `resources/js/features/reservations/`: katalog, pencarian/pemesanan penyewa, reservasi, modul admin, denah, tiket, dan ringkasan.
 - `resources/js/lib/http.ts`: request serta pesan kegagalan yang aman.
 - `resources/css/app.css`: tema dan responsivitas bersama.
 - `app/Models/User.php` dan `app/Models/Admin.php`: akun dengan tabel/provider masing-masing.
@@ -89,7 +89,7 @@ Pelanggan mendaftar atau masuk melalui `/sign-up` dan `/sign-in`, memilih jadwal
 - `config/reservations.php`: jam operasional, durasi minimal, zona waktu, dan toleransi keterlambatan.
 - `app/Http/Requests/`: normalisasi serta validasi server.
 - `app/Console/Commands/CreateAccount.php`: pembuatan akun tanpa menaruh kata sandi di argumen command.
-- `routes/web.php`: halaman, autentikasi, katalog publik, API pelanggan, dan API admin.
+- `routes/web.php`: halaman, autentikasi, katalog publik, API penyewa, dan API admin.
 
 ## Pemeriksaan
 

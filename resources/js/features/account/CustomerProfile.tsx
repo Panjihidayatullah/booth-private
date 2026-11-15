@@ -108,7 +108,7 @@ export default function CustomerProfile({ config, user, onUserUpdated, logoutBut
                             <div>
                                 <h2 id="profile-title">Informasi akunmu</h2>
                                 <span className="profile-type-badge">
-                                    <Shield aria-hidden="true" /> Akun Pelanggan
+                                    <Shield aria-hidden="true" /> Akun Penyewa
                                 </span>
                             </div>
                         </div>
@@ -169,7 +169,7 @@ export default function CustomerProfile({ config, user, onUserUpdated, logoutBut
                         </div>
                         <div>
                             <dt>Jenis akun</dt>
-                            <dd>{user?.role === 'admin' ? 'Administrator' : 'Pelanggan'}</dd>
+                            <dd>{user?.role === 'admin' ? 'Administrator' : 'Penyewa'}</dd>
                         </div>
                     </dl>
 

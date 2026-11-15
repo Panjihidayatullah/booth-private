@@ -20,7 +20,7 @@ Route::get('/dashboard', function (Request $request) {
     return redirect()->route($request->user()->isAdmin() ? 'admin.home' : 'customer.home');
 })->middleware('auth:web,admin')->name('dashboard');
 
-Route::middleware('auth:web')->prefix('pelanggan')->name('customer.')->group(function () {
+Route::middleware('auth:web')->prefix('penyewa')->name('customer.')->group(function () {
     foreach (['home' => '', 'rooms' => '/ruangan', 'bookings' => '/reservasi', 'account' => '/akun'] as $section => $path) {
         Route::view($path, 'welcome', ['page' => 'workspace', 'portal' => 'customer', 'section' => $section])->name($section);
     }

@@ -42,6 +42,10 @@ class AuthenticationTest extends TestCase
     {
         $this->assertSame('/sign-in', route('login', [], false));
         $this->assertSame('/admin/login', route('admin.login', [], false));
+        $this->assertSame('/penyewa', route('customer.home', [], false));
+        $this->assertSame('/penyewa/ruangan', route('customer.rooms', [], false));
+        $this->assertSame('/penyewa/reservasi', route('customer.bookings', [], false));
+        $this->assertSame('/penyewa/akun', route('customer.account', [], false));
         $this->get(route('login'))->assertOk()->assertViewHas('page', 'signin');
         $this->get(route('admin.login'))->assertOk()->assertViewHas('page', 'admin-signin');
         $this->get(route('customer.rooms'))->assertRedirect(route('login'));
