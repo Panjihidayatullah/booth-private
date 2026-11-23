@@ -59,6 +59,7 @@ class DatabaseSeeder extends Seeder
                 'rules' => 'Dilarang merokok, menjaga ketenangan, dan dilarang meninggalkan sampah.',
                 'description' => 'Booth privat kedap suara untuk fokus kerja mendalam, panggilan video, atau interview online.',
                 'is_active' => true,
+                'image_url' => '/images/rooms/booth-fokus-cemara.webp',
                 'floor_plan' => ['width' => 2, 'depth' => 2, 'desks' => 1, 'door' => 'bottom'],
             ]);
             $booth1->facilities()->sync([$allFacilityIds[0], $allFacilityIds[1], $allFacilityIds[2], $allFacilityIds[4]]);
@@ -73,6 +74,7 @@ class DatabaseSeeder extends Seeder
                 'rules' => 'Harap gunakan headset jika mendengarkan audio bersama.',
                 'description' => 'Booth nyaman untuk 2 orang untuk diskusi privat atau kolaborasi berpasangan.',
                 'is_active' => true,
+                'image_url' => '/images/rooms/booth-diskusi-pinus.webp',
                 'floor_plan' => ['width' => 3, 'depth' => 2, 'desks' => 1, 'door' => 'bottom'],
             ]);
             $booth2->facilities()->sync([$allFacilityIds[0], $allFacilityIds[1], $allFacilityIds[2], $allFacilityIds[4], $allFacilityIds[5]]);
@@ -87,6 +89,7 @@ class DatabaseSeeder extends Seeder
                 'rules' => 'Maksimal 6 peserta. Harap merapikan kursi dan meja setelah digunakan.',
                 'description' => 'Ruang kerja tim yang luas dilengkapi Smart Display dan papan tulis untuk sprint atau brainstorming.',
                 'is_active' => true,
+                'image_url' => '/images/rooms/ruang-kolaborasi-jati.webp',
                 'floor_plan' => ['width' => 6, 'depth' => 4, 'desks' => 2, 'door' => 'bottom'],
             ]);
             $workspace1->facilities()->sync($allFacilityIds);
