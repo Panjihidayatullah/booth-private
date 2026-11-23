@@ -31,7 +31,7 @@ Desktop.ini
 /vendor
 
 # Frontend / Vite / React Build
-/public/build
+# /public/build
 /public/hot
 npm-debug.log*
 yarn-debug.log*
