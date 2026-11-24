@@ -13,21 +13,22 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Admin
-        Admin::firstOrCreate(
+        Admin::updateOrCreate(
             ['username' => 'admin'],
             [
-                'name' => 'Administrator',
-                'password' => 'password',
+                'name' => 'Admin',
+                'password' => '123',
             ]
         );
 
         // Pelanggan
-        User::firstOrCreate(
-            ['username' => 'pelanggan'],
+        User::where('username', 'pelanggan')->delete();
+        User::updateOrCreate(
+            ['username' => 'haikal'],
             [
-                'name' => 'Pelanggan Demo',
-                'email' => 'pelanggan@example.com',
-                'password' => 'password',
+                'name' => 'Haikal',
+                'email' => null,
+                'password' => '123',
             ]
         );
 
