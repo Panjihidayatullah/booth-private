@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { ArrowDown, ArrowUpRight, Building2, CalendarDays, Home, LayoutDashboard, LogIn, Mic, ShieldCheck, TicketCheck, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowDown, ArrowUpRight, CalendarDays, LayoutDashboard, LogIn, Mic, ShieldCheck, TicketCheck, Users } from 'lucide-react';
 import Brand from '../components/Brand';
 import NavigationDrawer from '../components/NavigationDrawer';
-import MobileBottomNav, { mobileNavIndicatorDuration, type MobileNavItem } from '../components/MobileBottomNav';
 import PublicRoomCatalog from '../features/reservations/PublicRoomCatalog';
 import type { AppConfig } from '../types/app';
 
@@ -20,10 +19,6 @@ const MAIN_NAVIGATION = [
 export default function LandingPage({ config }: LandingPageProps) {
     const accountUrl = config.user ? config.urls.dashboard : config.urls.login;
     const [isHeaderScrolled, setIsHeaderScrolled] = useState(() => typeof window !== 'undefined' && window.scrollY > 24);
-    const [activeSection, setActiveSection] = useState('home');
-    const scrollTarget = useRef<string>(undefined);
-    const scrollTimer = useRef<number>(undefined);
-    const accountTimer = useRef<number>(undefined);
 
     useEffect(() => {
         const updateHeader = () => setIsHeaderScrolled(window.scrollY > 24);
@@ -31,103 +26,10 @@ export default function LandingPage({ config }: LandingPageProps) {
         updateHeader();
         window.addEventListener('scroll', updateHeader, { passive: true });
 
-        const sections = ['cara-reservasi', 'ruangan', 'about', 'home'];
-        const updateActiveSection = () => {
-            for (const sectionId of sections) {
-                const el = document.getElementById(sectionId);
-                if (el && el.getBoundingClientRect().top <= 220) {
-                    setActiveSection(sectionId);
-                    break;
-                }
-            }
-        };
-
-        const finishScrolling = () => {
-            scrollTarget.current = undefined;
-            updateActiveSection();
-        };
-        const handleScroll = () => {
-            if (scrollTarget.current === 'account') return;
-            if (scrollTarget.current) {
-                window.clearTimeout(scrollTimer.current);
-                scrollTimer.current = window.setTimeout(finishScrolling, 120);
-            } else {
-                updateActiveSection();
-            }
-        };
-        const restoreNavigation = () => {
-            window.clearTimeout(accountTimer.current);
-            window.clearTimeout(scrollTimer.current);
-            finishScrolling();
-        };
-
-        updateActiveSection();
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        window.addEventListener('pageshow', restoreNavigation);
-
         return () => {
             window.removeEventListener('scroll', updateHeader);
-            window.removeEventListener('scroll', handleScroll);
-            window.removeEventListener('pageshow', restoreNavigation);
-            window.clearTimeout(scrollTimer.current);
-            window.clearTimeout(accountTimer.current);
         };
     }, []);
-
-    function selectMobileItem(event: MouseEvent<HTMLAnchorElement>, section: string) {
-        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-        window.clearTimeout(accountTimer.current);
-        window.clearTimeout(scrollTimer.current);
-        scrollTarget.current = section;
-        setActiveSection(section);
-
-        if (section === 'account') {
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-            event.preventDefault();
-            accountTimer.current = window.setTimeout(() => window.location.assign(accountUrl), mobileNavIndicatorDuration + 30);
-        } else {
-            scrollTimer.current = window.setTimeout(() => { scrollTarget.current = undefined; }, 160);
-        }
-    }
-
-    const publicMobileNavItems: MobileNavItem[] = [
-        {
-            key: 'home',
-            label: 'Home',
-            href: '#home',
-            icon: Home,
-            active: activeSection === 'home',
-        },
-        {
-            key: 'about',
-            label: 'Tentang',
-            href: '#about',
-            icon: Users,
-            active: activeSection === 'about',
-        },
-        {
-            key: 'ruangan',
-            label: 'Ruangan',
-            href: '#ruangan',
-            icon: Building2,
-            active: activeSection === 'ruangan',
-        },
-        {
-            key: 'cara-reservasi',
-            label: 'Alur',
-            href: '#cara-reservasi',
-            icon: CalendarDays,
-            active: activeSection === 'cara-reservasi',
-        },
-        {
-            key: 'account',
-            label: config.user ? 'Akun' : 'Masuk',
-            href: accountUrl,
-            icon: config.user ? LayoutDashboard : LogIn,
-            active: activeSection === 'account',
-        },
-    ];
 
     return (
         <div className="landing-page">
@@ -197,11 +99,6 @@ export default function LandingPage({ config }: LandingPageProps) {
                     <div className="footer-bottom"><Brand href={config.urls.home} light /><p>Ruang untuk bertemu. Waktu untuk fokus.</p><nav aria-label="Navigasi footer"><a href="#home">Home</a><a href="#about">About</a><a href={accountUrl}>{config.user ? 'Dashboard' : 'Sign in'}</a></nav></div>
                 </div>
             </footer>
-            <MobileBottomNav
-                items={publicMobileNavItems.map((item) => ({ ...item, onClick: (event) => selectMobileItem(event, item.key) }))}
-                ariaLabel="Navigasi Halaman Utama Mobile"
-                animateIndicator
-            />
         </div>
     );
 }
