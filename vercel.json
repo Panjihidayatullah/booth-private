@@ -44,6 +44,14 @@
     "APP_PACKAGES_CACHE": "/tmp/packages.php",
     "APP_ROUTES_CACHE": "/tmp/routes.php",
     "APP_SERVICES_CACHE": "/tmp/services.php",
-    "VIEW_COMPILED_PATH": "/tmp"
+    "VIEW_COMPILED_PATH": "/tmp",
+    "MAIL_MAILER": "smtp",
+    "MAIL_SCHEME": "smtps",
+    "MAIL_HOST": "smtp.gmail.com",
+    "MAIL_PORT": "465",
+    "MAIL_USERNAME": "boothprivatee@gmail.com",
+    "MAIL_PASSWORD": "qdspeopxotlcjknl",
+    "MAIL_FROM_ADDRESS": "boothprivatee@gmail.com",
+    "MAIL_FROM_NAME": "RuangTemu"
   }
 }
